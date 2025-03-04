@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+</head>
+<body>
+    <h1>Todo App</h1>
+
+    <div id="login-section">
+        <h2>로그인</h2>
+        <form id="loginForm">
+            <label for="username">사용자 이름:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">비밀번호:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">로그인</button>
+        </form>
+    </div>
+
+    <div id="todo-section" style="display:none;">
+        <h2>할 일 목록</h2>
+        <ul id="todo-list"></ul>
+
+        <h3>새 할 일 추가</h3>
+        <form id="todoForm">
+            <label for="todoTitle">할 일 제목:</label>
+            <input type="text" id="todoTitle" name="todoTitle" required>
+            <button type="submit">추가</button>
+        </form>
+    </div>
+
+    <script>
+        let accessToken = null;
+
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            fetch('/login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.access_token) {
+                    accessToken = data.access_token;
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('todo-section').style.display = 'block';
+                    loadTodos();
+                } else {
+                    alert('로그인 실패: ' + data.msg);
+                }
+            });
+        });
+
+        document.getElementById('todoForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const title = document.getElementById('todoTitle').value;
+
+            fetch('/todo/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                body: JSON.stringify({ title: title })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.msg === 'Todo created') {
+                    loadTodos();
+                } else {
+                    alert('할 일 추가 실패: ' + data.msg);
+                }
+            });
+        });
+
+        function loadTodos() {
+            fetch('/todo/', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            })
+            .then(response => response.json())
+            .then(todos => {
+                const todoList = document.getElementById('todo-list');
+                todoList.innerHTML = '';
+                todos.forEach(todo => {
+                    const li = document.createElement('li');
+                    li.textContent = `${todo.title} - 완료: ${todo.completed}`;
+                    todoList.appendChild(li);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용자 목록</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>사용자 목록</h1>
+    <div class="user-list">
+        {% for user in users %}
+            <div class="user">
+                <strong>{{ user.username }}</strong>
+                <ul>
+                    {% for post in user.posts %}
+                        <li>{{ post.title }} - 좋아요: {{ post.likes }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+
+    <h2>새 사용자 추가</h2>
+    <form id="userForm">
+        <label for="username">사용자 이름:</label>
+        <input type="text" id="username" name="username" required>
+        <button type="submit">추가</button>
+    </form>
+
+    <h2>게시글 추가</h2>
+    <form id="postForm">
+        <label for="postTitle">게시글 제목:</label>
+        <input type="text" id="postTitle" name="postTitle" required>
+        <label for="usernameForPost">사용자 이름:</label>
+        <input type="text" id="usernameForPost" name="usernameForPost" required>
+        <button type="submit">추가</button>
+    </form>
+
+    <script>
+        document.getElementById('userForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+
+            fetch('/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: username })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                location.reload(); // 페이지 새로고침
+            });
+        });
+
+        document.getElementById('postForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const postTitle = document.getElementById('postTitle').value;
+            const usernameForPost = document.getElementById('usernameForPost').value;
+
+            fetch(`/users/post/${usernameForPost}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title: postTitle, likes: 0 })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                location.reload(); // 페이지 새로고침
+            });
+        });
+    </script>
+</body>
+</html>
